@@ -71,7 +71,7 @@ encryptFile(){
     ENCRYPTED=$(partToEncrypt "$TEXT" | kramdown | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')
     ORIGINAL_ENCRYPTED=$(partToEncrypt "$TEXT" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')
     FILENAME="$(basename "$1" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')"
-    TITLE="$(title "$FRONTMATTER")"
+    TITLE="$(title "$TEXT")"
     ENCRYPTED_TITLE="$(echo "$TITLE" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')"
     {
         echo "---";
@@ -93,7 +93,8 @@ decryptFile(){
     DEST="$2/$(retrieveEncryptedFilename "$1" "$3")"
     FRONTMATTER=$(frontMatter "$TEXT")
     ENCRYPTED=$(originalContent "$TEXT" | base64 -d | gpg --quiet --batch --passphrase="$3" -d -)
-    DECRYPTED_TITLE="$(title "$TEXT" | base64 -d | gpg --batch --passphrase="$3" -d -)"
+    TITLE="$(title "$TEXT")"
+    DECRYPTED_TITLE="$(echo "$TITLE" | base64 -d | gpg --quiet --batch --passphrase="$3" -d -)"
     {
         echo "---";
         echo "$FRONTMATTER";
