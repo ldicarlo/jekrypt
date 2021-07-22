@@ -30,3 +30,18 @@ Describe "Encrypt/Decrypt file"
     The variable ACTUAL should eq "$EXPECTED"
   End
 End
+Describe "Encrypt/Decrypt second file"
+  Example "Encrypts generate at least a file"
+    When call encryptFile "spec/expected/decrypted/2020-01-02-some-other-test.md" "spec/actual/encrypted" "test"
+    The path "spec/actual/encrypted/2020-01-02-a9796b5920" should be exist
+  End
+  Example "Encrypts and Decrypts as expected"
+    When call decryptFile "spec/actual/encrypted/2020-01-02-a9796b5920" "spec/actual/decrypted" "test"
+    The path "spec/actual/decrypted/2020-01-02-some-other-test.md" should be exist
+  End
+  Example "Results should be equal"
+    ACTUAL=$(cat "spec/actual/decrypted/2020-01-02-some-other-test.md")
+    EXPECTED=$(cat "spec/expected/decrypted/2020-01-02-some-other-test.md")
+    The variable ACTUAL should eq "$EXPECTED"
+  End
+End
