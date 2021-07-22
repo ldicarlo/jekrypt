@@ -1,3 +1,10 @@
+const dataModel = {
+  "masterpassword": "mastertest",
+  "2020-05-06-abcdef": "secret-password",
+  "Ln0st": "clear text for later"
+};
+
+
 (async function () {
   // Cases
   // - has ?pass or has ?masterpass => set it in LS
@@ -10,51 +17,65 @@
   if (urlParams.get("masterpassword")) {
     localStorage.setItem("masterpassword", urlParams.get("masterpassword"))
   }
-
-  if (document.querySelectorAll(".encrypted").length == 0) {
+  let encryptedContents = document.querySelectorAll(".encrypted")
+  if (encryptedContents.length == 0) {
     return;
   }
 
-  const pathname = filename
-  if (urlParams.get("pass")) {
-    localStorage.setItem(pathname, urlParams.get("pass"))
+  let encryptionKeys = {}
+  encryptedContents.forEach(element => encryptionKeys[element.attributes["encryption-key"].value] = "")
+
+  if (Object.keys(encryptionKeys).length == 1 && urlParams.get("pass")) {
+    localStorage.setItem(Object.keys(encryptionKeys)[0].slice(0, -3).split("/").pop(), urlParams.get("pass"))
   }
 
-  if (!localStorage.getItem(pathname) && localStorage.getItem("masterpassword")) {
-    const key = await decrypt(passwords[pathname], localStorage.getItem("masterpassword"))
 
-    localStorage.setItem(pathname, key.trim())
+  // get all encrypted
 
-  }
+  // if more than one encryption-key, ignore ?pass=
 
-  const key = localStorage.getItem(pathname)
+  // else add password for this key.
 
-  if (key) {
-    document.querySelectorAll(".encrypted").forEach(
-      element => decrypt(element.textContent.trim(), key)
-        .then(result => element.innerHTML = sanitize(result.trim()))
-        .then(() => {
-          if (!urlParams.get("pass")) {
-            history.pushState({}, "", "?pass=" + key)
-          }
-        })
-    )
-  } else {
-    document.querySelectorAll(".encrypted").forEach(element => element.innerHTML = "MISSING KEY: " + element.innerHTML)
+  encryptedContents.forEach(
+    async function (element) {
+      const encryptionKey = element.attributes["encryption-key"].value.slice(0, -3).split("/").pop()
+      if (!localStorage.getItem(encryptionKey) && localStorage.getItem("masterpassword")) {
+        const key = await decrypt(passwords[encryptionKey], localStorage.getItem("masterpassword"))
+        localStorage.setItem(encryptionKey, key.trim())
+      }
+      if (localStorage.getItem(encryptionKey)) {
+        decrypt(element.textContent.trim(), localStorage.getItem(encryptionKey))
+          .then(result => element.innerHTML = sanitize(result.trim()))
+          .then(() => {
+            if (!urlParams.get("pass") && Object.keys(encryptionKeys).length == 1) {
+              history.pushState({}, "", "?pass=" + localStorage.getItem(encryptionKey))
+            }
+          })
+      } else {
+        element => element.innerHTML = "MISSING KEY: " + element.innerHTML
+      }
+    }
+  )
+
+  async function decrypt(str, key) {
+    if (localStorage.getItem(str)) {
+      return localStorage.getItem(str)
+    }
+    console.log(str)
+    const encryptedMessage = await openpgp.readMessage({
+      armoredMessage: atob(str)
+    });
+    const { data: decrypted } = await openpgp.decrypt({
+      message: encryptedMessage,
+      passwords: [key],
+    });
+    localStorage.setItem(str, decrypted)
+    return decrypted
   }
 
 })()
 
-async function decrypt(str, key) {
-  const encryptedMessage = await openpgp.readMessage({
-    armoredMessage: atob(str)
-  });
-  const { data: decrypted } = await openpgp.decrypt({
-    message: encryptedMessage,
-    passwords: [key],
-  });
-  return decrypted
-}
+
 
 function sanitize(str) {
   if (str.startsWith('\"') && str.endsWith('\"')) {

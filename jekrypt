@@ -29,11 +29,11 @@ mkdir -p "$encrypted"
 declare -A kv
 
 loadKVStore(){
-    touch "$FILE"
+    touch "$KVSTORE_FILE"
     while IFS=' ' read -r key value
     do
         kv[$key]="$value"
-    done < "$FILE"
+    done < "$KVSTORE_FILE"
 }
 
 get(){
@@ -44,10 +44,10 @@ get(){
 put(){
     loadKVStore
     kv["$1"]="$2"
-    rm "$FILE"
+    rm "$KVSTORE_FILE"
     for i in "${!kv[@]}"
     do
-        echo "$i ${kv[$i]}" >> "$FILE"
+        echo "$i ${kv[$i]}" >> "$KVSTORE_FILE"
     done
 }
 
@@ -70,8 +70,11 @@ encryptFile(){
     FRONTMATTER=$(frontMatter "$TEXT")
     ENCRYPTED=$(partToEncrypt "$TEXT" | kramdown | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')
     ORIGINAL_ENCRYPTED=$(echo "$TEXT" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')
-    FILENAME="$(basename "$1" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')"
-    TITLE="$(title "$TEXT" "$1")"
+    FILE="$(basename "$1")"
+    FILENAME="$(echo "$FILE" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')"
+    FILE_NO_EXTENSION="${FILE%.*}"
+    TITLE="$(title "$TEXT" "${FILE_NO_EXTENSION:11}" "$1")"
+    echo "$TITLE"
     ENCRYPTED_TITLE="$(echo "$TITLE" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')"
     {
         echo "---";
@@ -113,11 +116,13 @@ originalContent(){
 }
 
 # $1 is the text
-# $2 is the filename
+# $2 is the filename part for generation
+# $3 is the path
 title(){
-  if  grep -qEi "title:" < "$2"; then
+  if  grep -qEi "title:" < "$3"; then
     echo "$1" | grep "title:" | sed -E 's/title: (.*)/\1/g'
   else
+
     echo "$2" | tr '-' ' ' |  sed -e 's/^./\U&/g; s/ ./\U&/g'
   fi
 }
