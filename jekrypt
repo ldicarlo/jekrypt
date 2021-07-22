@@ -53,7 +53,7 @@ put(){
 
 exportAsYML(){
     loadKVStore
-    [[ -t "$EXPORT" ]] && rm "$EXPORT"
+    [[ -f "$EXPORT" ]] && rm "$EXPORT"
     for i in "${!kv[@]}"
     do
         echo "- link: $i" >> "$EXPORT"

@@ -32,7 +32,7 @@
   if (key) {
     document.querySelectorAll(".encrypted").forEach(
       element => decrypt(element.textContent.trim(), key)
-        .then(result => element.innerHTML = result)
+        .then(result => element.innerHTML = sanitize(result.trim()))
         .then(() => {
           if (!urlParams.get("pass")) {
             history.pushState({}, "", "?pass=" + key)
@@ -43,17 +43,22 @@
     document.querySelectorAll(".encrypted").forEach(element => element.innerHTML = "MISSING KEY: " + element.innerHTML)
   }
 
-
-  async function decrypt(str, key) {
-    const encryptedMessage = await openpgp.readMessage({
-      armoredMessage: atob(str)
-    });
-    const { data: decrypted } = await openpgp.decrypt({
-      message: encryptedMessage,
-      passwords: [key],
-    });
-    return decrypted
-  }
-
-
 })()
+
+async function decrypt(str, key) {
+  const encryptedMessage = await openpgp.readMessage({
+    armoredMessage: atob(str)
+  });
+  const { data: decrypted } = await openpgp.decrypt({
+    message: encryptedMessage,
+    passwords: [key],
+  });
+  return decrypted
+}
+
+function sanitize(str) {
+  if (str.startsWith('\"') && str.endsWith('\"')) {
+    return str.slice(1, -1)
+  }
+  return str
+}
