@@ -66,7 +66,7 @@ exportAsYML(){
 # $3 password
 encryptFile(){
     TEXT=$(cat "$1")
-    DEST="$2"/"$(hashFilename "$1")"
+    DEST="$2"/"$(hashFilename "$1")".md
     FRONTMATTER=$(frontMatter "$TEXT")
     ENCRYPTED=$(partToEncrypt "$TEXT" | kramdown | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')
     ORIGINAL_ENCRYPTED=$(echo "$TEXT" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')
