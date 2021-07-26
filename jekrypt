@@ -130,7 +130,7 @@ title(){
 
 excerpt(){
    if  grep -qEi "excerpt:" < "$1"; then
-    echo "$1" | grep "excerpt:" | sed -E 's/excerpt: (.*)/\1/g'
+    grep "excerpt:" < "$1" | sed -E 's/excerpt: (.*)/\1/g'
    else
     echo ""
    fi
@@ -181,19 +181,19 @@ encryptAll(){
 }
 
 decryptAll(){
-    if [[ -n "$(ls -A "$1")" ]]; then
-        for f in "$1"/*; do
-            EXISTS=$(get "$(basename "$f")")
-            if [[ -n "$EXISTS" ]]; then
-                echo "Decrypting $f"
-                VALUE=$(getPassword "$(basename "$f")")
-                decryptFile "$f" "$2" "$VALUE"
-                echo "Decrypted $f"
-            fi
+  if [[ -n "$(ls -A "$1")" ]]; then
+      for f in "$1"/*; do
+          EXISTS=$(get "$(basename "$f" .md)")
+          if [[ -n "$EXISTS" ]]; then
+              echo "Decrypting $f"
+              VALUE=$(getPassword "$(basename "$f" .md)")
+              decryptFile "$f" "$2" "$VALUE"
+              echo "Decrypted $f"
+          fi
 
-        done
-        exportAsYML
-    fi
+      done
+      exportAsYML
+  fi
 }
 
 if [[ ! $# -eq 0 ]] ; then

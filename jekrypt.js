@@ -29,33 +29,24 @@ const dataModel = {
     localStorage.setItem(Object.keys(encryptionKeys)[0].slice(0, -3).split("/").pop(), urlParams.get("pass"))
   }
 
-
-  // get all encrypted
-
-  // if more than one encryption-key, ignore ?pass=
-
-  // else add password for this key.
-
-  encryptedContents.forEach(
-    async function (element) {
-      const encryptionKey = element.attributes["encryption-key"].value.slice(0, -3).split("/").pop()
-      if (!localStorage.getItem(encryptionKey) && localStorage.getItem("masterpassword")) {
-        const key = await decrypt(passwords[encryptionKey], localStorage.getItem("masterpassword"))
-        localStorage.setItem(encryptionKey, key.trim())
-      }
-      if (localStorage.getItem(encryptionKey)) {
-        decrypt(element.textContent.trim(), localStorage.getItem(encryptionKey))
-          .then(result => element.innerHTML = sanitize(result.trim()))
-          .then(() => {
-            if (!urlParams.get("pass") && Object.keys(encryptionKeys).length == 1) {
-              history.pushState({}, "", "?pass=" + localStorage.getItem(encryptionKey))
-            }
-          })
-      } else {
-        element => element.innerHTML = "MISSING KEY: " + element.innerHTML
-      }
+  for (let element of encryptedContents) {
+    const encryptionKey = element.attributes["encryption-key"].value.slice(0, -3).split("/").pop()
+    if (!localStorage.getItem(encryptionKey) && localStorage.getItem("masterpassword")) {
+      const key = await decrypt(passwords[encryptionKey], localStorage.getItem("masterpassword"))
+      localStorage.setItem(encryptionKey, key.trim())
     }
-  )
+    if (localStorage.getItem(encryptionKey)) {
+      await decrypt(element.textContent.trim(), localStorage.getItem(encryptionKey))
+        .then(result => element.innerHTML = sanitize(result.trim()))
+        .then(() => {
+          if (!urlParams.get("pass") && Object.keys(encryptionKeys).length == 1) {
+            history.pushState({}, "", "?pass=" + localStorage.getItem(encryptionKey))
+          }
+        })
+    } else {
+      element.innerHTML = "[ENCRYPTED - MISSING KEY]"
+    }
+  }
 
   async function decrypt(str, key) {
     if (localStorage.getItem(str)) {
