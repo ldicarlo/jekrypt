@@ -1,4 +1,5 @@
 To do:
+- [ ] Exerpts
 - [ ] Makefile
 - [ ] Variables with better names
 - [ ] --help and --help redirection

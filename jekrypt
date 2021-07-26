@@ -74,14 +74,16 @@ encryptFile(){
     FILENAME="$(echo "$FILE" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')"
     FILE_NO_EXTENSION="${FILE%.*}"
     TITLE="$(title "$TEXT" "${FILE_NO_EXTENSION:11}" "$1")"
-    echo "$TITLE"
     ENCRYPTED_TITLE="$(echo "$TITLE" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')"
+    EXCERPT="$(excerpt "$1")"
+    ENCRYPTED_EXCERPT="$(echo "$EXCERPT" | gpg --quiet --passphrase="$3" --batch --armor -c - | base64 | tr -d '\n')"
     {
         echo "---";
         echo "$FRONTMATTER";
         echo "original_content: $ORIGINAL_ENCRYPTED";
         echo "filename: $FILENAME"
         echo "title: $ENCRYPTED_TITLE"
+        echo "excerpt: $ENCRYPTED_EXCERPT"
         echo "---";
         echo "";
         echo "$ENCRYPTED";
@@ -104,7 +106,7 @@ frontMatterEnd(){
 
 frontMatter(){
     END=$(frontMatterEnd "$1")
-    echo "$1" | head -n "$END" | grep -v "original_content: *"  | grep -v "filename: *" | grep -v "title: *" | grep -v "\-\-\-"
+    echo "$1" | head -n "$END" | grep -v "original_content: *"  | grep -v "filename: *" | grep -v "title: *" | grep -v "excerpt: *" | grep -v "\-\-\-"
 }
 
 partToEncrypt(){
@@ -122,9 +124,16 @@ title(){
   if  grep -qEi "title:" < "$3"; then
     echo "$1" | grep "title:" | sed -E 's/title: (.*)/\1/g'
   else
-
     echo "$2" | tr '-' ' ' |  sed -e 's/^./\U&/g; s/ ./\U&/g'
   fi
+}
+
+excerpt(){
+   if  grep -qEi "excerpt:" < "$1"; then
+    echo "$1" | grep "excerpt:" | sed -E 's/excerpt: (.*)/\1/g'
+   else
+    echo ""
+   fi
 }
 
 getPassword(){
